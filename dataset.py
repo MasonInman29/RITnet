@@ -50,18 +50,51 @@ class Starburst_augment(object):
     ## This procedure is used in order to handle people with multiple reflections for glasses
     ## a random translation of mask of starburst pattern
     def __call__(self, img):
-        x=np.random.randint(1, 40)
-        y=np.random.randint(1, 40)
+        # x=np.random.randint(1, 40)
+        # y=np.random.randint(1, 40)
+        # mode = np.random.randint(0, 2)
+        # starburst=Image.open('starburst_black.png').convert("L")
+        # starburst = np.array(starburst)  # Convert to NumPy array
+        # starburst = cv2.resize(starburst, (400, 457))  # Ensure size matches expectations
+        
+        # if mode == 0:
+        #     starburst = np.pad(starburst, pad_width=((0, 0), (x, 0)), mode='constant')
+        #     starburst = starburst[:, :-x]
+        # if mode == 1:
+        #     starburst = np.pad(starburst, pad_width=((0, 0), (0, x)), mode='constant')
+        #     starburst = starburst[:, x:]
+
+        # img[92+y:549+y,0:400]=np.array(img)[92+y:549+y,0:400]*((255-np.array(starburst))/255)+np.array(starburst)
+        # print(f"img shape: {img.shape}")
+        # print(f"starburst shape: {starburst.shape}")
+
+        # return Image.fromarray(img)
+        x = np.random.randint(1, 40)
+        y = np.random.randint(1, 40)
         mode = np.random.randint(0, 2)
-        starburst=Image.open('starburst_black.png').convert("L")
+        starburst = Image.open('starburst_black.png').convert("L")
+        starburst = np.array(starburst)
+
+        # Adjust starburst size to match the area it is applied to
+        target_height = 457  # You need to adjust based on your img height
+        starburst = cv2.resize(starburst, (400, target_height))
+
         if mode == 0:
             starburst = np.pad(starburst, pad_width=((0, 0), (x, 0)), mode='constant')
             starburst = starburst[:, :-x]
-        if mode == 1:
+        else:  # mode == 1
             starburst = np.pad(starburst, pad_width=((0, 0), (0, x)), mode='constant')
             starburst = starburst[:, x:]
 
-        img[92+y:549+y,0:400]=np.array(img)[92+y:549+y,0:400]*((255-np.array(starburst))/255)+np.array(starburst)
+        # Ensure the shapes match
+        starburst_shape = starburst.shape[0]  # height of the starburst
+        img_slice = img[92+y:549+y, 0:400]  # img slice
+
+        if img_slice.shape[0] == starburst_shape:
+            img[92+y:549+y, 0:400] = img_slice * ((255 - starburst) / 255) + starburst
+        else:
+            print("Shape mismatch: img slice {} and starburst {}".format(img_slice.shape, starburst.shape))
+
         return Image.fromarray(img)
 
 def getRandomLine(xc, yc, theta):
@@ -122,6 +155,15 @@ class MaskToTensor(object):
 
   
 class IrisDataset(Dataset):
+    """
+    A dataset class for loading images and their corresponding labels from specified directories.
+    
+    Attributes:
+        filepath (str): Path to the dataset.
+        split (str): Indicates whether the dataset is for training, validation, or testing.
+        transform (callable, optional): Optional transform to be applied to the images.
+        ...
+    """ 
     def __init__(self, filepath, split='train',transform=None,**args):
         self.transform = transform
         self.filepath= osp.join(filepath,split)
@@ -137,7 +179,7 @@ class IrisDataset(Dataset):
         
         #PREPROCESSING STEP FOR ALL TRAIN, VALIDATION AND TEST INPUTS 
         #local Contrast limited adaptive histogram equalization algorithm
-        self.clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8,8))
+        #self.clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8,8))
 
     def __len__(self):
         if self.testrun:
@@ -146,7 +188,11 @@ class IrisDataset(Dataset):
 
     def __getitem__(self, idx):
         imagepath = osp.join(self.filepath,'images',self.list_files[idx]+'.png')
-        pilimg = Image.open(imagepath).convert("L")
+        try:
+            pilimg = Image.open(imagepath).convert("L")
+        except Exception as e:
+            print(f"Error loading image {imagepath}: {e}")
+        
         H, W = pilimg.width , pilimg.height
        
         #PREPROCESSING STEP FOR ALL TRAIN, VALIDATION AND TEST INPUTS 
@@ -154,6 +200,9 @@ class IrisDataset(Dataset):
         table = 255.0*(np.linspace(0, 1, 256)**0.8)
         pilimg = cv2.LUT(np.array(pilimg), table)
         
+        #Create CLAHE for this instance
+        self.clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8,8))
+
 
         if self.split != 'test':
             labelpath = osp.join(self.filepath,'labels',self.list_files[idx]+'.npy')
