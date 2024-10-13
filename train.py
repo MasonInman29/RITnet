@@ -58,13 +58,15 @@ if __name__ == '__main__':
 
 #    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  
 
-    if args.useGPU:
-        device=torch.device("cuda")
-        torch.cuda.manual_seed(12)
-    else:
-        device=torch.device("cpu")
-        torch.manual_seed(12)
+    # if args.useGPU:
+    #     device=torch.device("cuda")
+    #     torch.cuda.manual_seed(12)
+    # else:
+    #     device=torch.device("cpu")
+    #     torch.manual_seed(12)
         
+    device = torch.device("cpu")
+    torch.manual_seed(12)
     torch.backends.cudnn.deterministic=False
     
     if args.model not in model_dict:
@@ -165,6 +167,7 @@ if __name__ == '__main__':
         ##save the model every epoch
         if epoch %1 == 0:
             torch.save(model.state_dict(), '{}/models/dense_net{}.pkl'.format(LOGDIR,epoch))
+            print(f"epoch {epoch} saved.")
 
         ##visualize the ouput every 5 epoch
         if epoch %5 ==0:

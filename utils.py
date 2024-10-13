@@ -73,14 +73,17 @@ class GeneralizedDiceLoss(nn.Module):
 
         # Rapid way to convert to one-hot. For future version, use functional
         Label = (np.arange(4) == target.cpu().numpy()[..., None]).astype(np.uint8)
-        target = torch.from_numpy(np.rollaxis(Label, 3,start=1)).cuda()
+        #target = torch.from_numpy(np.rollaxis(Label, 3,start=1)).cuda()
+        target = torch.from_numpy(np.rollaxis(Label, 3,start=1)).cpu()
 
         assert ip.shape == target.shape
         ip = self.norm(ip)
 
         # Flatten for multidimensional data
-        ip = torch.flatten(ip, start_dim=2, end_dim=-1).cuda().to(torch.float32)
-        target = torch.flatten(target, start_dim=2, end_dim=-1).cuda().to(torch.float32)
+        #ip = torch.flatten(ip, start_dim=2, end_dim=-1).cuda().to(torch.float32)
+        ip = torch.flatten(ip, start_dim=2, end_dim=-1).cpu().to(torch.float32)
+        #target = torch.flatten(target, start_dim=2, end_dim=-1).cuda().to(torch.float32)
+        target = torch.flatten(target, start_dim=2, end_dim=-1).cpu().to(torch.float32)
         
         numerator = ip*target
         denominator = ip + target

@@ -1,0 +1,2 @@
+10/10/24    changed CLAHE creation to be in __getItem__ instead of __init__ to enable seperate instances for multiprocessing
+10/13/24    First successful testrun. Ran on CPU and commented out cuda support
