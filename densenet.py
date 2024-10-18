@@ -23,12 +23,12 @@ class DenseNet2D_down_block(nn.Module):
         self.conv22 = nn.Conv2d(output_channels,output_channels,kernel_size=(3,3),padding=(1,1))
         self.conv31 = nn.Conv2d(input_channels+2*output_channels,output_channels,kernel_size=(1,1),padding=(0,0))
         self.conv32 = nn.Conv2d(output_channels,output_channels,kernel_size=(3,3),padding=(1,1))
-        self.max_pool = nn.AvgPool2d(kernel_size=down_size)            
+        self.max_pool = nn.AvgPool2d(kernel_size=down_size)
         
         self.relu = nn.LeakyReLU()
         self.down_size = down_size
         self.dropout = dropout
-        self.dropout1 = nn.Dropout(p=prob)
+        self.dropout1 = nn.Dropout(p=prob) 
         self.dropout2 = nn.Dropout(p=prob)
         self.dropout3 = nn.Dropout(p=prob)
         self.bn = torch.nn.BatchNorm2d(num_features=output_channels)

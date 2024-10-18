@@ -58,14 +58,14 @@ if __name__ == '__main__':
 
 #    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  
 
-    # if args.useGPU:
-    #     device=torch.device("cuda")
-    #     torch.cuda.manual_seed(12)
-    # else:
-    #     device=torch.device("cpu")
-    #     torch.manual_seed(12)
+    if args.useGPU:
+        device=torch.device("cuda")
+        torch.cuda.manual_seed(12)
+    else:
+        device=torch.device("cpu")
+        torch.manual_seed(12)
         
-    device = torch.device("cpu")
+    #device = torch.device("cpu")
     torch.manual_seed(12)
     torch.backends.cudnn.deterministic=False
     

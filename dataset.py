@@ -50,50 +50,38 @@ class Starburst_augment(object):
     ## This procedure is used in order to handle people with multiple reflections for glasses
     ## a random translation of mask of starburst pattern
     def __call__(self, img):
-        # x=np.random.randint(1, 40)
-        # y=np.random.randint(1, 40)
-        # mode = np.random.randint(0, 2)
-        # starburst=Image.open('starburst_black.png').convert("L")
-        # starburst = np.array(starburst)  # Convert to NumPy array
-        # starburst = cv2.resize(starburst, (400, 457))  # Ensure size matches expectations
-        
-        # if mode == 0:
-        #     starburst = np.pad(starburst, pad_width=((0, 0), (x, 0)), mode='constant')
-        #     starburst = starburst[:, :-x]
-        # if mode == 1:
-        #     starburst = np.pad(starburst, pad_width=((0, 0), (0, x)), mode='constant')
-        #     starburst = starburst[:, x:]
-
-        # img[92+y:549+y,0:400]=np.array(img)[92+y:549+y,0:400]*((255-np.array(starburst))/255)+np.array(starburst)
-        # print(f"img shape: {img.shape}")
-        # print(f"starburst shape: {starburst.shape}")
-
-        # return Image.fromarray(img)
         x = np.random.randint(1, 40)
         y = np.random.randint(1, 40)
         mode = np.random.randint(0, 2)
+        
         starburst = Image.open('starburst_black.png').convert("L")
-        starburst = np.array(starburst)
+        starburst = np.array(starburst)  # Convert to NumPy array
 
-        # Adjust starburst size to match the area it is applied to
-        target_height = 457  # You need to adjust based on your img height
-        starburst = cv2.resize(starburst, (400, target_height))
+        img_height, img_width = img.shape[:2]  # Get image dimensions
+        starburst_height, starburst_width = starburst.shape  # Get starburst dimensions
+
+        # Adjust starburst size to match the img slice (92+y:549+y corresponds to height 457)
+        img_slice_height = 549 - 92  # Fixed slice height = 457
+        if starburst_height > img_slice_height:
+            starburst = starburst[:img_slice_height, :]  # Crop starburst to match img slice height
+        elif starburst_height < img_slice_height:
+            starburst = np.pad(starburst, ((0, img_slice_height - starburst_height), (0, 0)), mode='constant')
 
         if mode == 0:
             starburst = np.pad(starburst, pad_width=((0, 0), (x, 0)), mode='constant')
             starburst = starburst[:, :-x]
-        else:  # mode == 1
+        if mode == 1:
             starburst = np.pad(starburst, pad_width=((0, 0), (0, x)), mode='constant')
             starburst = starburst[:, x:]
 
-        # Ensure the shapes match
-        starburst_shape = starburst.shape[0]  # height of the starburst
-        img_slice = img[92+y:549+y, 0:400]  # img slice
+        # Ensure both img slice and starburst have the same shape
+        img_slice = img[92+y:549+y, 0:400]
+        # DEBUGGING
+        # print(f"img slice shape: {img_slice.shape}\tstarburst shape: {starburst.shape}")
 
-        if img_slice.shape[0] == starburst_shape:
-            img[92+y:549+y, 0:400] = img_slice * ((255 - starburst) / 255) + starburst
-        else:
-            print("Shape mismatch: img slice {} and starburst {}".format(img_slice.shape, starburst.shape))
+        # img[92+y:549+y, 0:400] = img_slice * ((255 - starburst) / 255) + starburst
+        starburst_resized = np.resize(starburst, img_slice.shape)
+        img[92+y:549+y, 0:400] = img_slice * ((255 - starburst_resized) / 255) + starburst_resized
 
         return Image.fromarray(img)
 
@@ -145,7 +133,8 @@ class Line_augment(object):
         for i in np.arange(0, num_lines):
             theta = np.pi*np.random.rand(1)
             x1, y1, x2, y2 = getRandomLine(xc, yc, theta)
-            aug_base = cv2.line(aug_base, (x1, y1), (x2, y2), (255, 255, 255), 4)
+            aug_base = cv2.line(aug_base, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), 4)
+            # aug_base = cv2.line(aug_base, (x1, y1), (x2, y2), (255, 255, 255), 4)
         aug_base = aug_base.astype(np.uint8)
         return Image.fromarray(aug_base)       
         
@@ -213,12 +202,16 @@ class IrisDataset(Dataset):
         if self.transform is not None:
             if self.split == 'train':
                 if random.random() < 0.2: 
+                    # print("Starburst")
                     pilimg = Starburst_augment()(np.array(pilimg))  
                 if random.random() < 0.2: 
+                    # print("Line Augment")
                     pilimg = Line_augment()(np.array(pilimg))    
                 if random.random() < 0.2:
+                    # print("Gaussian Blur")
                     pilimg = Gaussian_blur()(np.array(pilimg))   
                 if random.random() < 0.4:
+                    # print("Translation")
                     pilimg, label = Translation()(np.array(pilimg),np.array(label))
                 
         img = self.clahe.apply(np.array(np.uint8(pilimg)))    

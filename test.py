@@ -29,8 +29,10 @@ if __name__ == '__main__':
 
     if args.useGPU:
         device=torch.device("cuda")
+        print("using CUDA")
     else:
         device=torch.device("cpu")
+        print("using CPU")
         
     model = model_dict[args.model]
     model  = model.to(device)
@@ -43,7 +45,7 @@ if __name__ == '__main__':
     model = model.to(device)
     model.eval()
 
-    test_set = IrisDataset(filepath = 'Semantic_Segmentation_Dataset/',\
+    test_set = IrisDataset(filepath = 'Semantic_Segmentation_Dataset/openEDS/openEDS',\
                                  split = 'test',transform = transform)
     
     testloader = DataLoader(test_set, batch_size = args.bs,
